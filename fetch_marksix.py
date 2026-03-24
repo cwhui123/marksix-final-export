@@ -1,42 +1,26 @@
-import requests
 import pandas as pd
-import re
 
-# 官方 HKJC Mark Six 結果頁（英文）
-url = "https://bet.hkjc.com/en/marksix/results"
+# 已整理嘅 Mark Six 歷史資料（自動更新）
+url = "https://raw.githubusercontent.com/icelam/mark-six-data-visualization/master/data/marksix.csv"
 
-headers = {
-    "User-Agent": "Mozilla/5.0"
-}
+df = pd.read_csv(url)
 
-html = requests.get(url, headers=headers, timeout=20).text
-print("HTML length:", len(html))
+# 只取需要嘅欄位（視 dataset）
+df = df.rename(columns={
+    "draw": "期數",
+    "no1": "N1",
+    "no2": "N2",
+    "no3": "N3",
+    "no4": "N4",
+    "no5": "N5",
+    "no6": "N6",
+    "extra": "特別號"
+})
 
-# ✅ 用正則直接抓開彩結果（穩定）
-pattern = re.compile(
-    r'(\d{2}/\d{3}).*?(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})',
-    re.S
-)
+df = df[["期數", "N1", "N2", "N3", "N4", "N5", "N6", "特別號"]]
 
-matches = pattern.findall(html)
-print("Matches found:", len(matches))
+print("✅ Records fetched:", len(df))
 
-records = []
-for m in matches:
-    records.append({
-        "期數": m[0],
-        "N1": int(m[1]),
-        "N2": int(m[2]),
-        "N3": int(m[3]),
-        "N4": int(m[4]),
-        "N5": int(m[5]),
-        "N6": int(m[6]),
-        "特別號": int(m[7]),
-    })
-
-print("✅ Records fetched:", len(records))
-
-df = pd.DataFrame(records[::-1])
 df.to_excel("data.xlsx", index=False)
-
 print("✅ data.xlsx written")
+``
