@@ -1,37 +1,38 @@
 import requests
 import pandas as pd
-from bs4 import BeautifulSoup
+import re
 
-url = "https://lottery.hk/en/mark-six/results/"
-html = requests.get(url, timeout=20).text
+# 官方 HKJC Mark Six 結果頁（英文）
+url = "https://bet.hkjc.com/en/marksix/results"
 
-print("HTML length:", len(html))  # ✅ debug
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
 
-soup = BeautifulSoup(html, "html.parser")
+html = requests.get(url, headers=headers, timeout=20).text
+print("HTML length:", len(html))
 
-tables = soup.find_all("table")
-print("Tables found:", len(tables))  # ✅ debug
+# ✅ 用正則直接抓開彩結果（穩定）
+pattern = re.compile(
+    r'(\d{2}/\d{3}).*?(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{1,2})',
+    re.S
+)
+
+matches = pattern.findall(html)
+print("Matches found:", len(matches))
 
 records = []
-
-for table in tables:
-    for row in table.find_all("tr"):
-        cells = [c.get_text(strip=True) for c in row.find_all("td")]
-        if len(cells) >= 9:
-            try:
-                records.append({
-                    "期數": cells[0],
-                    "日期": cells[1],
-                    "N1": int(cells[2]),
-                    "N2": int(cells[3]),
-                    "N3": int(cells[4]),
-                    "N4": int(cells[5]),
-                    "N5": int(cells[6]),
-                    "N6": int(cells[7]),
-                    "特別號": int(cells[8]),
-                })
-            except:
-                pass
+for m in matches:
+    records.append({
+        "期數": m[0],
+        "N1": int(m[1]),
+        "N2": int(m[2]),
+        "N3": int(m[3]),
+        "N4": int(m[4]),
+        "N5": int(m[5]),
+        "N6": int(m[6]),
+        "特別號": int(m[7]),
+    })
 
 print("✅ Records fetched:", len(records))
 
